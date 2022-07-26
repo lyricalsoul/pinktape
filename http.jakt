@@ -10,14 +10,22 @@ struct HTTPResponse {
 // TODO: write a url parser, supporting host, port, uri, path
 class HTTP {
     public function get(this, url: String) throws -> HTTPResponse {
-        let text = HTTP::buildRequestText("GET", host: url, path: "/")
+        let text = HTTP::buildRequestText("GET", host: url, path: "/", headers: None, body: None)
         let r = sendSimpleRequest(hostname: url, port: 80, data: text)
         return HTTP::parseResponse(r)
     }
 
-    // TODO: allow switching http version
-    function buildRequestText(anon method: String, host: String, path: String) throws -> String {
-        return format("{} {} HTTP/1.1\r\nHost: {}\r\n\r\n", method, path, host)
+    // TODO: allow switching http version (requires a multiplexing implementation (dead inside noises))
+    // TODO: after traits are implemented, consider adding a common method for stringifying primitive types such as i64 so we can just pass it as the body
+    function buildRequestText(anon method: String, host: String, path: String, headers: [String: String]?, body: String?) throws -> String {
+        mut str = StringBuilder::create()
+        str.append_string(format("Host: {}\r\n", host))
+        if headers.has_value() {
+            for header in headers!.iterator() {
+                str.append_string(format("{}: {}\r\n", header.0, header.1))
+            }
+        }
+        return format("{} {} HTTP/1.1\r\n{}\r\n{}", method, path, str.to_string(), (body ?? ""))
     }
 
     function parseResponse(anon resp: String) throws -> HTTPResponse {
@@ -31,7 +39,7 @@ class HTTP {
         // FIXME: this probably has horrible performance.
         // the contentTime thing is the main issue: it copies already allocated data to the builder to finally merge em all together
         // i think getting a subslice of the array (starting at i+1, ending at length-1) and just joining it would be better 
-        // FIXME: this also looks ugly but we do have bigger fish to fry
+        // FIXME: this also looks HORRIBLE but we do have bigger fish to fry
         for lineR in resp.split('\n').iterator() {
             let line = lineR.replace(replace: "\r", with: "")
             if contentTime {

@@ -10,8 +10,9 @@ import extern c "pinktape/socket.h"  {
     extern function free_buffer(anon _: raw c_char)
 }
 
-enum HTTPInternalError {
-    HOSTNAME_ERROR,
+// FIXME: actually use this enum (doesn't work yet)
+enum HTTPInternalError : i32 {
+    HOSTNAME_ERROR = 0x21,
     CONNECT_ERROR,
     WRITE_DATA_ERROR,
     READ_DATA_ERRROR
@@ -22,7 +23,7 @@ function createConnection(hostname: String, port: u32) throws -> i64 {
     mut addr = get_sock_addr(hostname: hostname.c_string(), port)
     if (addr.has_value() == false) {
         println("couldnt get addr!")
-        throw Error::from_errno(0xadd)
+        throw Error::from_errno(0x21)
     }
     // FIXME: can !connect_socket(...) be used here? i think the parser doesn't recognize it yet
     if (connect_socket(descriptor: sock, addr: addr!) == false) {
