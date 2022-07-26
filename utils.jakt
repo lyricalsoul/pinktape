@@ -1,0 +1,14 @@
+struct ParsedURL {
+    uri: String?
+    host: String
+    port: u32?
+    path: String
+}
+
+// FIXME: rewrite url parser when regex:tm: (if regex:tm:)
+// ON HOLD UNTIL split(anon _: String)! (or String.ends_with, can work with both)
+public function parseUrl(anon url: String) throws -> ParsedURL {
+    // let's try getting the uri first
+    let split = url.split('/')
+    
+}

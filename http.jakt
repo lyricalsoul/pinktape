@@ -7,7 +7,6 @@ struct HTTPResponse {
     headers: [String: String]
 }
 
-// TODO: write a url parser, supporting host, port, uri, path
 class HTTP {
     public function get(this, url: String) throws -> HTTPResponse {
         let text = HTTP::buildRequestText("GET", host: url, path: "/", headers: None, body: None)
