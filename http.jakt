@@ -1,0 +1,67 @@
+import sockets { sendTo }
+
+// FIXME: use enums for representing http methods (is it possible yet?)
+struct HTTPResponse {
+    statusCode: u32
+    text: String
+    headers: [String: String]
+}
+
+// TODO: write a url parser, supporting host, port, uri, path
+class HTTP {
+    public function get(this, url: String) throws -> HTTPResponse {
+        let text = HTTP::buildRequestText("GET", host: url, path: "/")
+        let r = sendTo(hostname: url, port: 80, data: text)
+        return HTTP::parseResponse(r)
+    }
+
+    // TODO: allow switching http version
+    function buildRequestText(anon method: String, host: String, path: String) throws -> String {
+        return format("{} {} HTTP/1.1\r\nHost: {}\r\n\r\n", method, path, host)
+    }
+
+    function parseResponse(anon resp: String) throws -> HTTPResponse {
+        mut statusCode: u32 = 0
+        mut dict = Dictionary<String, String>()
+        mut contentTime = false
+        mut builder = StringBuilder::create()
+        mut i = 0;
+
+        // this can be EXTREMELY optimized once we get some new builtin funcs
+        // FIXME: this probably has horrible performance.
+        // the contentTime thing is the main issue: it copies already allocated data to the builder to finally merge em all together
+        // i think getting a subslice of the array (starting at i+1, ending at length-1) and just joining it would be better 
+        // FIXME: this also looks ugly but we do have bigger fish to fry
+        for lineR in resp.split('\n').iterator() {
+            let line = lineR.replace(replace: "\r", with: "")
+            if contentTime {
+                if (line != "") { builder.append_string(line) }
+                continue
+            }
+
+            if i == 0 {
+                statusCode = line.split(' ')[1].to_uint()!
+                i++
+                continue
+            }
+
+            if line == "" {
+                println("switching mode")
+                contentTime = true
+                continue
+            }
+
+            // parse header
+            if contentTime == false  {
+                let key = split(original: line, separator: ": ", keep_empty: true)[0]
+                dict.set(key, line.replace(replace: (key + ": "), with: ""))
+            }
+            i++
+        }
+
+        if statusCode == 0 {
+            throw Error::from_errno(0xbeef)
+        }
+        return HTTPResponse(statusCode: statusCode, text: builder.to_string(), headers: dict)
+    }
+}

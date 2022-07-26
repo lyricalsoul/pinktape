@@ -1,0 +1,13 @@
+import http { HTTP }
+
+function main () {
+    let http = HTTP()
+    let a = http.get(url: "example.com")
+
+    println("status: {}", a.statusCode)
+    for item in a.headers.iterator() {
+        println("[header] {} is {}", item.0, item.1)
+    }
+    println("body:")
+    println("{}", a.text)
+}

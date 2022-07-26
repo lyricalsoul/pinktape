@@ -1,0 +1,47 @@
+import extern c "pinktape/socket.h"  {
+    extern struct sockaddr_in {}
+    extern struct any {}
+    extern function build_tcp_socket() -> i64
+    extern function close_socket(descriptor: i64)
+    extern function get_sock_addr(hostname: raw c_char, port: u32) -> sockaddr_in?
+    extern function connect_socket(descriptor: i64, addr: sockaddr_in) -> bool
+    extern function send_request(sock: i64, data: raw c_char) -> i64
+    extern function read_request(sock: i64) -> raw c_char?
+    extern function free_buffer(anon _: raw c_char)
+}
+
+enum HTTPInternalError {
+    HOSTNAME_ERROR,
+    CONNECT_ERROR,
+    WRITE_DATA_ERROR,
+    READ_DATA_ERRROR
+}
+
+// TODO: rewrite this function to allow easy keep alive impl (for websockets and whatnot)
+function sendTo(hostname: String, port: u32, data: String) throws -> String {
+    let sock = build_tcp_socket();
+    mut addr = get_sock_addr(hostname: hostname.c_string(), port)
+    if (addr.has_value() == false) {
+        println("couldnt get addr!")
+        return ""
+    }
+    // FIXME: use !connect_socket(...) once the ! operator works
+    if (connect_socket(descriptor: sock, addr: addr!) == false) {
+        println("couldnt connect socket!")
+        return ""
+    }
+    if (send_request(sock, data: data.c_string()) < 1) {
+        println("couldnt write data to socket")
+        return ""
+    }
+    mut buffer = read_request(sock)
+    if (buffer.has_value() == false) {
+        println("couldnt read from socket!")
+        return ""
+    }
+    mut builder = StringBuilder::create()
+    builder.append_c_string(buffer!)
+    free_buffer(buffer!)
+    close_socket(descriptor: sock)
+    return builder.to_string()
+}
