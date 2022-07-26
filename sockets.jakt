@@ -1,12 +1,12 @@
+// FIXME: i64? can socket descriptors be negative?
 import extern c "pinktape/socket.h"  {
     extern struct sockaddr_in {}
-    extern struct any {}
     extern function build_tcp_socket() -> i64
     extern function close_socket(descriptor: i64)
     extern function get_sock_addr(hostname: raw c_char, port: u32) -> sockaddr_in?
     extern function connect_socket(descriptor: i64, addr: sockaddr_in) -> bool
-    extern function send_request(sock: i64, data: raw c_char) -> i64
-    extern function read_request(sock: i64) -> raw c_char?
+    extern function send_request(socket: i64, data: raw c_char) -> i64
+    extern function read_request(socket: i64) -> raw c_char?
     extern function free_buffer(anon _: raw c_char)
 }
 
@@ -17,31 +17,47 @@ enum HTTPInternalError {
     READ_DATA_ERRROR
 }
 
-// TODO: rewrite this function to allow easy keep alive impl (for websockets and whatnot)
-function sendTo(hostname: String, port: u32, data: String) throws -> String {
-    let sock = build_tcp_socket();
+function createConnection(hostname: String, port: u32) throws -> i64 {
+    let sock = build_tcp_socket()
     mut addr = get_sock_addr(hostname: hostname.c_string(), port)
     if (addr.has_value() == false) {
         println("couldnt get addr!")
-        return ""
+        throw Error::from_errno(0xadd)
     }
-    // FIXME: use !connect_socket(...) once the ! operator works
+    // FIXME: can !connect_socket(...) be used here? i think the parser doesn't recognize it yet
     if (connect_socket(descriptor: sock, addr: addr!) == false) {
         println("couldnt connect socket!")
-        return ""
+        throw Error::from_errno(0xcccc) 
     }
-    if (send_request(sock, data: data.c_string()) < 1) {
+
+    return sock
+}
+
+// FIXME: allow sending types other than string
+function write(socket: i64, data: String) throws {
+    if (send_request(socket, data: data.c_string()) < 1) {
         println("couldnt write data to socket")
-        return ""
+        throw Error::from_errno(0xea)
     }
-    mut buffer = read_request(sock)
+}
+
+function readString(socket: i64) throws -> String {
+    mut buffer = read_request(socket)
     if (buffer.has_value() == false) {
         println("couldnt read from socket!")
-        return ""
+        throw Error::from_errno(0x23)
     }
     mut builder = StringBuilder::create()
     builder.append_c_string(buffer!)
     free_buffer(buffer!)
-    close_socket(descriptor: sock)
     return builder.to_string()
 }
+
+function sendSimpleRequest(hostname: String, port: u32, data: String) throws -> String {
+    let sock = createConnection(hostname, port)
+    write(socket: sock, data)
+    let str = readString(socket: sock)
+    close_socket(descriptor: sock)
+    return str
+}
+

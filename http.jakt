@@ -1,4 +1,4 @@
-import sockets { sendTo }
+import sockets { sendSimpleRequest }
 
 // FIXME: use enums for representing http methods (is it possible yet?)
 struct HTTPResponse {
@@ -11,7 +11,7 @@ struct HTTPResponse {
 class HTTP {
     public function get(this, url: String) throws -> HTTPResponse {
         let text = HTTP::buildRequestText("GET", host: url, path: "/")
-        let r = sendTo(hostname: url, port: 80, data: text)
+        let r = sendSimpleRequest(hostname: url, port: 80, data: text)
         return HTTP::parseResponse(r)
     }
 
@@ -53,7 +53,7 @@ class HTTP {
 
             // parse header
             if contentTime == false  {
-                let key = split(original: line, separator: ": ", keep_empty: true)[0]
+                let key = line.split(':')[0]
                 dict.set(key, line.replace(replace: (key + ": "), with: ""))
             }
             i++
