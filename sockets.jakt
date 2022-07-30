@@ -54,11 +54,4 @@ function readString(socket: i64) throws -> String {
     return builder.to_string()
 }
 
-function sendSimpleRequest(hostname: String, port: u32, data: String) throws -> String {
-    let sock = createConnection(hostname, port)
-    write(socket: sock, data)
-    let str = readString(socket: sock)
-    close_socket(descriptor: sock)
-    return str
-}
 
