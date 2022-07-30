@@ -1,14 +1,9 @@
 import http { HTTP, WebSocket }
 import fillers { testRandomBytes, testBase64Encoder }
 
-function main() {
-    testRandomBytes()
-    testBase64Encoder()
-}
-
-function _main () throws {
+function main () throws {
     let ws = WebSocket::create(host: "gateway.discord.gg", path: "/")
-    let a = HTTP::get(url: "example.com")
+    let a = HTTP::get(url: "example.com", headers: None, body: None)
 
     println("status: {}", a.statusCode)
     for item in a.headers.iterator() {

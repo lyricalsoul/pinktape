@@ -26,5 +26,6 @@ function testBase64Encoder() throws {
 }
 
 function generateWebSocketKey() throws -> String {
-
+    // FIXME: implemwnt me
+    return ""
 }

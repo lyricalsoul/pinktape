@@ -8,8 +8,20 @@ struct HTTPResponse {
 }
 
 class HTTP {
-    public function get(url: String) throws -> HTTPResponse {
-        let text = HTTP::buildRequestText("GET", host: url, path: "/", headers: None, body: None)
+    public function get(url: String, headers: [String : String]?, body: String?) throws -> HTTPResponse {
+        let text = HTTP::buildRequestText("GET", host: url, path: "/", headers, body)
+        let r = sendSimpleRequest(hostname: url, port: 80, data: text)
+        return HTTP::parseResponse(r)
+    }
+
+    public function post(url: String, headers: [String : String]?, body: String?) throws -> HTTPResponse {
+        let text = HTTP::buildRequestText("POST", host: url, path: "/", headers, body)
+        let r = sendSimpleRequest(hostname: url, port: 80, data: text)
+        return HTTP::parseResponse(r)
+    }
+
+    public function put(url: String, headers: [String : String]?, body: String) throws -> HTTPResponse {
+        let text = HTTP::buildRequestText("PUT", host: url, path: "/", headers, body)
         let r = sendSimpleRequest(hostname: url, port: 80, data: text)
         return HTTP::parseResponse(r)
     }
