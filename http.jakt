@@ -1,4 +1,4 @@
-import sockets { sendSimpleRequest }
+import sockets { sendSimpleRequest, createConnection, write, readString, close_socket }
 
 // FIXME: use enums for representing http methods (is it possible yet?)
 struct HTTPResponse {
@@ -8,7 +8,7 @@ struct HTTPResponse {
 }
 
 class HTTP {
-    public function get(this, url: String) throws -> HTTPResponse {
+    public function get(url: String) throws -> HTTPResponse {
         let text = HTTP::buildRequestText("GET", host: url, path: "/", headers: None, body: None)
         let r = sendSimpleRequest(hostname: url, port: 80, data: text)
         return HTTP::parseResponse(r)
@@ -16,7 +16,7 @@ class HTTP {
 
     // TODO: allow switching http version (requires a multiplexing implementation (dead inside noises))
     // TODO: after traits are implemented, consider adding a common method for stringifying primitive types such as i64 so we can just pass it as the body
-    function buildRequestText(anon method: String, host: String, path: String, headers: [String: String]?, body: String?) throws -> String {
+    public function buildRequestText(anon method: String, host: String, path: String, headers: [String: String]?, body: String?) throws -> String {
         mut str = StringBuilder::create()
         str.append_string(format("Host: {}\r\n", host))
         if headers.has_value() {
@@ -70,5 +70,40 @@ class HTTP {
             throw Error::from_errno(0xbeef)
         }
         return HTTPResponse(statusCode: statusCode, text: builder.to_string(), headers: dict)
+    }
+}
+
+// FIXME: hacky (and unsafe) way of passing functions as arguments!
+// extern struct Function {}
+
+class WebSocket {
+    // TODO: make this private when we get private
+    _sock: i64
+    _wsKey: String
+    _connectionPayload: String
+
+    // FIXME: rewrite the signature to use parseUrl
+    public function create(host: String, path: String) throws -> WebSocket {
+        let text = HTTP::buildRequestText(
+            "GET",
+            host,
+            path,
+            headers: [
+                "Upgrade": "websocket",
+                "Connection": "Upgrade",
+                "Sec-WebSocket-Key": "x3JJHMbDL1EzLkh9GBhXDw==",
+                "Sec-WebSocket-Version": "13"
+            ],
+            body: None
+        )
+        return WebSocket(_sock: -1, _wsKey: "cu", _connectionPayload: text)
+    }
+
+    // public function onData(mut this, anon handler: Function) {
+    //    this.handler = handler
+    // }
+
+    public function connect(mut this) throws {
+        //let sock = createConnection(hostname: host, 80)
     }
 }

@@ -1,0 +1,30 @@
+// functionality that jakt does not yet provide
+import extern c "pinktape/fillers.h"  {
+    extern function generate_random_bytes(length: i64) -> raw c_char
+    extern function call_srand()
+    extern function free(buffer: raw c_char)
+    extern function base64_encode(data: raw c_char, length: i64) -> raw c_char?
+}
+
+function testRandomBytes() throws {
+    call_srand()
+    mut b = StringBuilder::create()
+    b.append_c_string(generate_random_bytes(length: 5))
+    println(b.to_string())
+}
+
+function testBase64Encoder() throws {
+    mut bytes = generate_random_bytes(length: 12)
+    mut encoded = base64_encode(data: bytes, length: 12)
+    if encoded.has_value() == false {
+        println("got null from base64_encode!")
+        throw Error::from_errno(0xabc)
+    }
+    mut b = StringBuilder::create()
+    b.append_c_string(encoded!)
+    println(b.to_string())
+}
+
+function generateWebSocketKey() throws -> String {
+
+}

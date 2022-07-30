@@ -1,9 +1,0 @@
-// TODO: add wss
-import sockets { createConnection, write, readString, close_socket }
-import http { HTTP }
-
-class WebSocket {
-    // TODO: make this private when we get private
-    _sock: i64
-    public function connect(host: String)
-}
